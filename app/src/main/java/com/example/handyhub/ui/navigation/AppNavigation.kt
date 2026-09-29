@@ -12,12 +12,16 @@ import androidx.navigation.navArgument
 import com.example.handyhub.ui.screens.AccountTypeScreen
 import com.example.handyhub.ui.screens.AuthMode
 import com.example.handyhub.ui.screens.AuthScreen
+import com.example.handyhub.ui.screens.ChatScreen
 import com.example.handyhub.ui.screens.EmployeeFeedScreen
 import com.example.handyhub.ui.screens.EmployerDashboardScreen
+import com.example.handyhub.ui.screens.NotificationsScreen
 import com.example.handyhub.ui.screens.PostJobScreen
+import com.example.handyhub.ui.screens.ResetPasswordScreen
 import com.example.handyhub.ui.screens.ReviewApplicantsScreen
 import com.example.handyhub.ui.screens.Role
 import com.example.handyhub.ui.screens.WelcomeScreen
+import com.example.handyhub.ui.screens.WorkerInspectionScreen
 import com.example.handyhub.ui.screens.WorkerProfileScreen
 
 object ScreenRoutes {
@@ -25,13 +29,18 @@ object ScreenRoutes {
     const val AUTH = "auth"
     const val ACCOUNT_TYPE = "account_type"
     const val EMPLOYER_DASHBOARD = "employer_dashboard"
+    const val OPEN_REQUESTS = "open_requests"
     const val EMPLOYEE_FEED = "employee_feed"
     const val POST_JOB = "post_job"
     const val REVIEW_APPLICANTS = "review_applicants"
     const val WORKER_PROFILE = "worker_profile"
-    const val WORKER_PROFILE_DETAIL = "worker_profile/{workerId}"
+    const val WORKER_INSPECTION_DETAIL = "worker_inspection/{workerId}?isAccepted={isAccepted}"
+    const val CHAT_DETAIL = "chat/{workerId}"
+    const val NOTIFICATIONS = "notifications"
+    const val RESET_PASSWORD = "reset_password"
 
-    fun createWorkerProfileRoute(workerId: String) = "worker_profile/$workerId"
+    fun createWorkerInspectionRoute(workerId: String, isAccepted: Boolean = false) = "worker_inspection/$workerId?isAccepted=$isAccepted"
+    fun createChatRoute(workerId: String) = "chat/$workerId"
 }
 
 @Composable
@@ -68,11 +77,26 @@ fun AppNavigation(
                 onGoogleSignIn = {
                     Toast.makeText(context, "Signed in with Google", Toast.LENGTH_SHORT).show()
                     navController.navigate(ScreenRoutes.ACCOUNT_TYPE)
+                },
+                onResetPasswordNavigate = {
+                    navController.navigate(ScreenRoutes.RESET_PASSWORD)
                 }
             )
         }
 
-        // 3. Account Type Selection Screen (Role Choice)
+        // 3. Reset Password Screen
+        composable(ScreenRoutes.RESET_PASSWORD) {
+            ResetPasswordScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onPasswordUpdated = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // 4. Account Type Selection Screen (Role Choice)
         composable(ScreenRoutes.ACCOUNT_TYPE) {
             AccountTypeScreen(
                 onSelectRole = { role ->
@@ -94,7 +118,7 @@ fun AppNavigation(
             )
         }
 
-        // 4. Employer Hub Dashboard Screen
+        // 5. Employer Hub Dashboard Screen
         composable(ScreenRoutes.EMPLOYER_DASHBOARD) {
             EmployerDashboardScreen(
                 onPostJobClick = {
@@ -103,15 +127,47 @@ fun AppNavigation(
                 onReviewApplicantsClick = { _ ->
                     navController.navigate(ScreenRoutes.REVIEW_APPLICANTS)
                 },
+                onStalkProfileClick = { workerId ->
+                    navController.navigate(ScreenRoutes.createWorkerInspectionRoute(workerId, true))
+                },
+                onSwitchRoleClick = {
+                    navController.navigate(ScreenRoutes.EMPLOYEE_FEED) {
+                        popUpTo(ScreenRoutes.EMPLOYER_DASHBOARD) { inclusive = true }
+                    }
+                },
                 onLogoutClick = {
-                    navController.navigate(ScreenRoutes.WELCOME) {
+                    navController.navigate(ScreenRoutes.AUTH) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
             )
         }
 
-        // 5. Post Job Screen
+        composable(ScreenRoutes.OPEN_REQUESTS) {
+            EmployerDashboardScreen(
+                onPostJobClick = {
+                    navController.navigate(ScreenRoutes.POST_JOB)
+                },
+                onReviewApplicantsClick = { _ ->
+                    navController.navigate(ScreenRoutes.REVIEW_APPLICANTS)
+                },
+                onStalkProfileClick = { workerId ->
+                    navController.navigate(ScreenRoutes.createWorkerInspectionRoute(workerId, true))
+                },
+                onSwitchRoleClick = {
+                    navController.navigate(ScreenRoutes.EMPLOYEE_FEED) {
+                        popUpTo(ScreenRoutes.OPEN_REQUESTS) { inclusive = true }
+                    }
+                },
+                onLogoutClick = {
+                    navController.navigate(ScreenRoutes.AUTH) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // 6. Post Job Screen
         composable(ScreenRoutes.POST_JOB) {
             PostJobScreen(
                 onBackClick = {
@@ -123,19 +179,22 @@ fun AppNavigation(
             )
         }
 
-        // 6. Review Applicants Screen
+        // 7. Review Applicants Screen
         composable(ScreenRoutes.REVIEW_APPLICANTS) {
             ReviewApplicantsScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onViewProfileClick = { applicant ->
-                    navController.navigate(ScreenRoutes.createWorkerProfileRoute(applicant.employeeId))
+                onViewProfileClick = { applicant, isAccepted ->
+                    navController.navigate(ScreenRoutes.createWorkerInspectionRoute(applicant.employeeId, isAccepted))
+                },
+                onChatClick = { workerId ->
+                    navController.navigate(ScreenRoutes.createChatRoute(workerId))
                 }
             )
         }
 
-        // 7. Worker Profile Screen (Self-view or Inspector view)
+        // 8. Worker Profile Screen (Worker Owner POV)
         composable(
             route = ScreenRoutes.WORKER_PROFILE
         ) {
@@ -147,28 +206,83 @@ fun AppNavigation(
             )
         }
 
+        // 9. Worker Inspection Screen (Employer POV)
         composable(
-            route = ScreenRoutes.WORKER_PROFILE_DETAIL,
+            route = ScreenRoutes.WORKER_INSPECTION_DETAIL,
+            arguments = listOf(
+                navArgument("workerId") { type = NavType.StringType },
+                navArgument("isAccepted") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { backStackEntry ->
+            val workerId = backStackEntry.arguments?.getString("workerId") ?: "EMP-01"
+            val isAccepted = backStackEntry.arguments?.getBoolean("isAccepted") ?: false
+            val isRoberto = workerId == "EMP-WORKER-001" || workerId == "EMP-01"
+            val workerName = if (isRoberto) "Roberto \"Bert\" Flores" else "Mario \"Mayong\" Santos"
+            val trade = if (isRoberto) "Master Electrician" else "Novice Electrician"
+
+            WorkerInspectionScreen(
+                workerId = workerId,
+                workerName = workerName,
+                primaryTrade = trade,
+                initialAccepted = isAccepted,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onChatClick = { targetId ->
+                    navController.navigate(ScreenRoutes.createChatRoute(targetId))
+                }
+            )
+        }
+
+        // 10. Notifications Screen
+        composable(ScreenRoutes.NOTIFICATIONS) {
+            NotificationsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onChatClick = { workerId ->
+                    navController.navigate(ScreenRoutes.createChatRoute(workerId))
+                }
+            )
+        }
+
+        // 11. In-App Chat Screen
+        composable(
+            route = ScreenRoutes.CHAT_DETAIL,
             arguments = listOf(navArgument("workerId") { type = NavType.StringType })
         ) { backStackEntry ->
             val workerId = backStackEntry.arguments?.getString("workerId") ?: "EMP-01"
-            val workerDisplayName = if (workerId == "EMP-WORKER-002") "Pedro Penduko" else "Juan Dela Cruz"
-            WorkerProfileScreen(
-                workerName = workerDisplayName,
+            val workerName = if (workerId == "EMP-WORKER-001") "Roberto \"Bert\" Flores" else "Juan Dela Cruz"
+            ChatScreen(
+                workerName = workerName,
                 onBackClick = {
                     navController.popBackStack()
                 }
             )
         }
 
-        // 8. Employee Feed Screen
+        // 12. Employee Feed Screen
         composable(ScreenRoutes.EMPLOYEE_FEED) {
             EmployeeFeedScreen(
                 onProfileClick = {
                     navController.navigate(ScreenRoutes.WORKER_PROFILE)
                 },
+                onNotificationsClick = {
+                    navController.navigate(ScreenRoutes.NOTIFICATIONS)
+                },
+                onChatClick = { workerId ->
+                    navController.navigate(ScreenRoutes.createChatRoute(workerId))
+                },
+                onSwitchRoleClick = {
+                    navController.navigate(ScreenRoutes.EMPLOYER_DASHBOARD) {
+                        popUpTo(ScreenRoutes.EMPLOYEE_FEED) { inclusive = true }
+                    }
+                },
                 onLogoutClick = {
-                    navController.navigate(ScreenRoutes.WELCOME) {
+                    navController.navigate(ScreenRoutes.AUTH) {
                         popUpTo(0) { inclusive = true }
                     }
                 }

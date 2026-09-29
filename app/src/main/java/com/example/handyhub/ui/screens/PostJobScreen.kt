@@ -22,6 +22,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -32,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.handyhub.data.model.CdoBarangays
 import com.example.handyhub.data.model.JobPostRequest
 import com.example.handyhub.data.model.ThesisCategories
 import com.example.handyhub.data.network.RetrofitClient
@@ -57,19 +62,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostJobScreen(
     onBackClick: () -> Unit = {},
     onJobPostedSuccess: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var selectedCategory by remember { mutableStateOf(ThesisCategories.PLUMBING) }
     var jobTitle by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var budgetPhp by remember { mutableStateOf("") }
-    var cdoBarangay by remember { mutableStateOf("Carmen, Cagayan de Oro") }
+
+    // Barangay Dropdown State
+    var selectedBarangay by remember { mutableStateOf("Carmen") }
+    var barangayDropdownExpanded by remember { mutableStateOf(false) }
 
     val photoUris = remember { mutableStateListOf<Uri>() }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -177,7 +186,7 @@ fun PostJobScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Budget in PHP & Barangay in CDO
+                // Budget in PHP & Barangay in CDO (Exposed Dropdown)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -204,7 +213,7 @@ fun PostJobScreen(
                         )
                     }
 
-                    Column(modifier = Modifier.weight(1.2f)) {
+                    Column(modifier = Modifier.weight(1.3f)) {
                         Text(
                             text = "CDO BARANGAY / DISTRICT",
                             fontSize = 11.sp,
@@ -212,16 +221,48 @@ fun PostJobScreen(
                             color = TextSecondary
                         )
                         Spacer(modifier = Modifier.height(6.dp))
-                        OutlinedTextField(
-                            value = cdoBarangay,
-                            onValueChange = { cdoBarangay = it },
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White, RoundedCornerShape(12.dp)),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = textFieldColors()
-                        )
+
+                        ExposedDropdownMenuBox(
+                            expanded = barangayDropdownExpanded,
+                            onExpandedChange = { barangayDropdownExpanded = !barangayDropdownExpanded },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = selectedBarangay,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = barangayDropdownExpanded) },
+                                modifier = Modifier
+                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                                    .fillMaxWidth()
+                                    .background(Color.White, RoundedCornerShape(12.dp)),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors()
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = barangayDropdownExpanded,
+                                onDismissRequest = { barangayDropdownExpanded = false },
+                                modifier = Modifier.background(Color.White)
+                            ) {
+                                CdoBarangays.barangays.forEach { barangay ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = barangay,
+                                                fontSize = 13.sp,
+                                                color = if (barangay == selectedBarangay) MaroonPrimary else TextDark,
+                                                fontWeight = if (barangay == selectedBarangay) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedBarangay = barangay
+                                            barangayDropdownExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -256,7 +297,7 @@ fun PostJobScreen(
                                 title = jobTitle,
                                 category = selectedCategory,
                                 description = description,
-                                district = cdoBarangay,
+                                district = "Brgy. $selectedBarangay, CDO",
                                 budget = budget
                             )
                             isSubmitting = false

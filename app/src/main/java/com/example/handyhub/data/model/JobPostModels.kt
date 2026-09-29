@@ -63,7 +63,7 @@ data class JobPostDto(
     val budgetPhp: Double,
 
     @SerializedName("status")
-    val status: String = "OPEN",
+    var status: String = "OPEN",
 
     @SerializedName("employer_phone")
     val employerPhone: String? = null,
@@ -98,11 +98,11 @@ object ThesisCategories {
 
     fun getDisplayName(category: String): String {
         return when (category.uppercase()) {
-            CARPENTRY -> "Carpentry"
-            PLUMBING -> "Plumbing"
-            ELECTRICAL -> "Electrical Services"
-            HOUSE_CLEANING -> "House Cleaning"
-            APPLIANCE_SERVICING -> "Appliance Servicing"
+            CARPENTRY, "CARPENTRY SERVICES" -> "Carpentry"
+            PLUMBING, "PLUMBING SERVICES" -> "Plumbing"
+            ELECTRICAL, "ELECTRIC", "ELECTRICAL_SERVICES", "ELECTRICAL SERVICES" -> "Electrical Services"
+            HOUSE_CLEANING, "HOUSE CLEANING" -> "House Cleaning"
+            APPLIANCE_SERVICING, "APPLIANCE_SERVICING_MAINTENANCE", "APPLIANCE SERVICING", "APPLIANCE SERVICING & MAINTENANCE" -> "Appliance Servicing & Maintenance"
             else -> category
         }
     }

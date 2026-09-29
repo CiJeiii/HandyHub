@@ -5,8 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,24 +17,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,45 +44,45 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.handyhub.data.model.ApplicantDto
 import com.example.handyhub.ui.theme.HandyHubTheme
-import com.example.handyhub.ui.theme.LightPinkButton
 import com.example.handyhub.ui.theme.MaroonPrimary
 import com.example.handyhub.ui.theme.TextDark
 import com.example.handyhub.ui.theme.TextSecondary
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ApplicantReviewCard(
     applicant: ApplicantDto,
-    onViewProfileClick: () -> Unit,
-    onAcceptApplicationClick: () -> Unit,
+    onStalkProfileClick: () -> Unit,
+    onAcceptClick: () -> Unit,
+    onDeclineClick: () -> Unit,
+    onCallClick: () -> Unit,
     onChatClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    var isAccepting by remember { mutableStateOf(false) }
     val isAccepted = applicant.status.uppercase() == "ACCEPTED"
+    val isRejected = applicant.status.uppercase() == "REJECTED"
 
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(18.dp)
         ) {
-            // Top Row: Avatar, Name, Rating & Mastery Badge
+            // Top Row: Avatar, Name, Rating & Status Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(50.dp)
                         .clip(CircleShape)
                         .background(Color(0xFFEEEEEE))
-                        .border(1.5.dp, MaroonPrimary, CircleShape),
+                        .border(1.5.dp, if (isRejected) Color.Gray else MaroonPrimary, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!applicant.profilePhotoUrl.isNullOrEmpty()) {
@@ -102,7 +97,7 @@ fun ApplicantReviewCard(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Avatar",
                             tint = Color.Gray,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
@@ -113,17 +108,17 @@ fun ApplicantReviewCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = applicant.fullName,
-                            fontSize = 17.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = TextDark
+                            color = if (isRejected) TextSecondary else TextDark
                         )
-                        if (applicant.isVerified) {
+                        if (applicant.isVerified && !isRejected) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.Verified,
                                 contentDescription = "Verified Pro",
                                 tint = Color(0xFF1976D2),
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                     }
@@ -134,208 +129,245 @@ fun ApplicantReviewCard(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = "Rating",
-                            tint = Color(0xFFFFB300),
+                            tint = if (isRejected) Color(0xFF9E9E9E) else Color(0xFFFFB300),
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "${applicant.starRating} ★ Rating (98% Rec.)",
+                            text = if (isRejected) "★ ${applicant.starRating} · 40% Recommended (Low)" else "★ ${applicant.starRating} · 96% Recommended",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
+                            color = if (isRejected) Color(0xFFD32F2F) else TextSecondary
+                        )
+                    }
+                }
+
+                // Top Badge ("Accepted", "Rejected", "Pending")
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            when {
+                                isAccepted -> Color(0xFFE8F5E9)
+                                isRejected -> Color(0xFFFFEBEE)
+                                else -> Color(0xFFFFF3E0)
+                            }
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = when {
+                            isAccepted -> "Accepted"
+                            isRejected -> "Rejected"
+                            else -> "Pending"
+                        },
+                        color = when {
+                            isAccepted -> Color(0xFF2E7D32)
+                            isRejected -> Color(0xFFC62828)
+                            else -> Color(0xFFE65100)
+                        },
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Confirmation Banner for ACCEPTED State
+            if (isAccepted) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFE8F5E9))
+                        .border(1.dp, Color(0xFFA5D6A7), RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LockOpen,
+                            contentDescription = "Unlocked",
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text(
+                                text = "✔ Application Accepted! Contact details unlocked.",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1B5E20)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "🔓 +63 917 888 9999",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF2E7D32)
+                            )
+                        }
+                    }
+                }
+            } else if (isRejected) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFFEBEE))
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = Color(0xFFC62828),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Low Rating Warning: Past client feedback notes poor reliability.",
+                        fontSize = 11.sp,
+                        color = Color(0xFFB71C1C),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                // State A: PENDING Body
+                Column {
+                    Text(
+                        text = "PROPOSAL PITCH",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "\"${applicant.proposalMessage}\"",
+                        fontSize = 12.sp,
+                        color = TextDark,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = Color(0xFF757575),
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "🔒 +63 917 **** ***",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = TextSecondary
                         )
                     }
                 }
-
-                // Mastery Badge
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFE3F2FD))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "Expert Level 3",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFF1565C0)
-                    )
-                }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Recommendation Tags
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                listOf("Punctual", "Detail-Oriented", "Clean Worksite").forEach { tag ->
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(LightPinkButton)
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = "✓ $tag",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaroonPrimary
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Proposal Pitch
-            Text(
-                text = "PROPOSAL PITCH",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextSecondary,
-                letterSpacing = 0.5.sp
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = "\"${applicant.proposalMessage}\"",
-                fontSize = 12.sp,
-                color = TextDark,
-                lineHeight = 16.sp
-            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Privacy Contact Unlocking Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isAccepted) Color(0xFFE8F5E9) else Color(0xFFF5F5F5))
-                    .border(
-                        1.dp,
-                        if (isAccepted) Color(0xFFA5D6A7) else Color(0xFFE0E0E0),
-                        RoundedCornerShape(10.dp)
-                    )
-                    .padding(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isAccepted) Icons.Default.LockOpen else Icons.Default.Lock,
-                            contentDescription = "Lock Status",
-                            tint = if (isAccepted) Color(0xFF2E7D32) else Color(0xFF757575),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = if (isAccepted) "CONTACT UNLOCKED" else "CONTACT HIDDEN",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isAccepted) Color(0xFF2E7D32) else Color(0xFF757575)
-                            )
-                            Text(
-                                text = if (isAccepted && applicant.unmaskedPhone != null)
-                                    "+63 ${applicant.unmaskedPhone}"
-                                else
-                                    "+63 917 **** ***",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (isAccepted) Color(0xFF1B5E20) else TextDark
-                            )
-                        }
-                    }
-
-                    if (isAccepted) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Accepted",
-                            tint = Color(0xFF2E7D32),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action Buttons: View Profile vs Accept / Chat
+            // Bottom Action Buttons (Dynamic based on State A vs State B)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
-                    onClick = onViewProfileClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0E0E0)),
+                // Stalk Profile button always present
+                OutlinedButton(
+                    onClick = onStalkProfileClick,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .weight(1f)
-                        .height(42.dp)
+                        .height(40.dp)
                 ) {
                     Text(
-                        text = "View Profile",
+                        text = "Stalk Profile",
                         color = TextDark,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                if (!isAccepted) {
+                if (isAccepted) {
+                    // State B ACCEPTED: Call & Chat
                     Button(
-                        onClick = {
-                            isAccepting = true
-                            onAcceptApplicationClick()
-                        },
-                        enabled = !isAccepting,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaroonPrimary),
+                        onClick = onCallClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
-                            .weight(1.2f)
-                            .height(42.dp)
+                            .weight(1f)
+                            .height(40.dp)
                     ) {
-                        if (isAccepting) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                text = "Accept Application",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = "Call",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Call", color = Color.White, fontSize = 12.sp)
                     }
-                } else {
+
                     Button(
                         onClick = onChatClick,
                         colors = ButtonDefaults.buttonColors(containerColor = MaroonPrimary),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .weight(1.2f)
-                            .height(42.dp)
+                            .height(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Comment,
                             contentDescription = "Chat",
                             tint = Color.White,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        Text("Chat", color = Color.White, fontSize = 12.sp)
+                    }
+                } else if (isRejected) {
+                    Button(
+                        onClick = onAcceptClick, // Re-evaluate
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF757575)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .height(40.dp)
+                    ) {
                         Text(
-                            text = "In-App Chat",
+                            text = "Re-evaluate",
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                } else {
+                    // State A PENDING: Decline & Accept
+                    Button(
+                        onClick = onDeclineClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                    ) {
+                        Text("Decline", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = onAcceptClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaroonPrimary),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .height(40.dp)
+                    ) {
+                        Text("Accept", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -345,22 +377,23 @@ fun ApplicantReviewCard(
 
 @Preview(showBackground = true)
 @Composable
-fun ApplicantReviewCardPreview() {
+fun ApplicantReviewCardPendingPreview() {
     HandyHubTheme {
         ApplicantReviewCard(
             applicant = ApplicantDto(
                 applicationId = 1,
                 jobId = 101,
                 employeeId = "EMP-01",
-                fullName = "Juan Dela Cruz",
+                fullName = "Roberto \"Bert\" Flores",
                 starRating = 4.9,
                 isVerified = true,
-                proposalMessage = "I have 6 years of experience in pipe leakage repair in CDO. Available immediately.",
-                status = "PENDING",
-                unmaskedPhone = null
+                proposalMessage = "I have 6 years of residential electrical experience in Carmen.",
+                status = "PENDING"
             ),
-            onViewProfileClick = {},
-            onAcceptApplicationClick = {},
+            onStalkProfileClick = {},
+            onAcceptClick = {},
+            onDeclineClick = {},
+            onCallClick = {},
             onChatClick = {}
         )
     }

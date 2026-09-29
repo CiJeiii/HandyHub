@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
@@ -51,10 +50,11 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ReviewApplicantsScreen(
     jobId: Int = 101,
-    jobTitle: String = "Water Pipe Leak Repair in Kitchen Sink",
-    jobCategory: String = "Plumbing",
+    jobTitle: String = "Ceiling Fan & Outlet Electrical Repair",
+    jobCategory: String = "ELECTRICAL",
     onBackClick: () -> Unit = {},
-    onViewProfileClick: (ApplicantDto) -> Unit = {}
+    onViewProfileClick: (ApplicantDto, Boolean) -> Unit = { _, _ -> },
+    onChatClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val applicants = remember { mutableStateListOf<ApplicantDto>() }
@@ -96,7 +96,7 @@ fun ReviewApplicantsScreen(
                     }
                     Column(modifier = Modifier.padding(start = 8.dp)) {
                         Text(
-                            text = "Review Applicants",
+                            text = "Review Applicants (2)",
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black
@@ -167,14 +167,24 @@ fun ReviewApplicantsScreen(
                         items(applicants) { applicant ->
                             ApplicantReviewCard(
                                 applicant = applicant,
-                                onViewProfileClick = { onViewProfileClick(applicant) },
-                                onAcceptApplicationClick = {
+                                onStalkProfileClick = {
+                                    val isAccepted = applicant.status.uppercase() == "ACCEPTED"
+                                    onViewProfileClick(applicant, isAccepted)
+                                },
+                                onAcceptClick = {
                                     applicant.status = "ACCEPTED"
-                                    applicant.unmaskedPhone = "917-123-4567"
-                                    Toast.makeText(context, "Application Accepted! Contact Unlocked.", Toast.LENGTH_LONG).show()
+                                    applicant.unmaskedPhone = "917-888-9999"
+                                    Toast.makeText(context, "Worker accepted! You can now chat or call directly.", Toast.LENGTH_LONG).show()
+                                },
+                                onDeclineClick = {
+                                    applicant.status = "REJECTED"
+                                    Toast.makeText(context, "Application declined for ${applicant.fullName}", Toast.LENGTH_SHORT).show()
+                                },
+                                onCallClick = {
+                                    Toast.makeText(context, "Calling ${applicant.fullName} (+63 917 888 9999)...", Toast.LENGTH_SHORT).show()
                                 },
                                 onChatClick = {
-                                    Toast.makeText(context, "Opening In-App Chat with ${applicant.fullName}", Toast.LENGTH_SHORT).show()
+                                    onChatClick(applicant.employeeId)
                                 }
                             )
                         }
@@ -208,25 +218,25 @@ private fun getMockApplicants(jobId: Int): List<ApplicantDto> {
             applicationId = 301,
             jobId = jobId,
             employeeId = "EMP-WORKER-001",
-            fullName = "Juan Dela Cruz",
+            fullName = "Roberto \"Bert\" Flores",
             starRating = 4.9,
             isVerified = true,
-            proposalMessage = "I have 6 years of experience in pipe leakage repair in CDO. Available immediately.",
+            proposalMessage = "I have 6 years of residential electrical experience in Carmen. Available today.",
             status = "PENDING",
             unmaskedPhone = null,
-            skills = listOf("Plumbing")
+            skills = listOf("Electrical Services")
         ),
         ApplicantDto(
             applicationId = 302,
             jobId = jobId,
             employeeId = "EMP-WORKER-002",
-            fullName = "Pedro Penduko",
-            starRating = 4.7,
-            isVerified = true,
-            proposalMessage = "Licensed master plumber with references in Carmen & Nazareth area.",
-            status = "PENDING",
+            fullName = "Mario \"Mayong\" Santos",
+            starRating = 2.3,
+            isVerified = false,
+            proposalMessage = "I can do fan repair cheaply. Contact me.",
+            status = "REJECTED",
             unmaskedPhone = null,
-            skills = listOf("Plumbing")
+            skills = listOf("Electrical Services")
         )
     )
 }

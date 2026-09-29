@@ -1,5 +1,6 @@
 package com.example.handyhub.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -27,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -48,6 +51,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.handyhub.ui.components.ForgotPasswordBottomSheet
+import com.example.handyhub.ui.components.OtpVerificationDialog
 import com.example.handyhub.ui.theme.HandyHubTheme
 import com.example.handyhub.ui.theme.MaroonPrimary
 import com.example.handyhub.ui.theme.OffWhiteBackground
@@ -64,14 +69,21 @@ fun AuthScreen(
     initialMode: AuthMode = AuthMode.LOG_IN,
     onBackClick: () -> Unit = {},
     onSubmit: (AuthMode, Role, String, String, String) -> Unit = { _, _, _, _, _ -> },
-    onGoogleSignIn: () -> Unit = {}
+    onGoogleSignIn: () -> Unit = {},
+    onResetPasswordNavigate: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var mode by remember { mutableStateOf(initialMode) }
 
     // Form fields
     var fullName by remember { mutableStateOf("") }
     var mobileNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // Bottom sheet / dialog state for forgot password flow
+    var showForgotPasswordSheet by remember { mutableStateOf(false) }
+    var showOtpDialog by remember { mutableStateOf(false) }
+    var targetMobileForOtp by remember { mutableStateOf("917 123 4567") }
 
     Box(
         modifier = Modifier
@@ -90,7 +102,7 @@ fun AuthScreen(
                     .padding(top = 44.dp, bottom = 36.dp)
             ) {
                 Column {
-                    // Back button (White circle with dark arrow)
+                    // Back button
                     Box(
                         modifier = Modifier
                             .size(42.dp)
@@ -127,7 +139,6 @@ fun AuthScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Title depends on mode
                     Crossfade(targetState = mode, label = "HeaderTitle") { targetMode ->
                         Text(
                             text = if (targetMode == AuthMode.LOG_IN) "Welcome back!" else "Create Account",
@@ -149,7 +160,6 @@ fun AuthScreen(
                     .padding(horizontal = 24.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Tab / Toggle Selector ("Log In" vs "Register")
                 AuthTabToggle(
                     selectedMode = mode,
                     onModeSelected = { mode = it }
@@ -157,7 +167,6 @@ fun AuthScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Input Fields
                 if (mode == AuthMode.REGISTER) {
                     AuthInputField(
                         label = "FULL NAME",
@@ -186,7 +195,24 @@ fun AuthScreen(
                     isPassword = true
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                // Forgot Password button under password field (Log In mode)
+                if (mode == AuthMode.LOG_IN) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showForgotPasswordSheet = true }) {
+                            Text(
+                                text = "Forgot Password?",
+                                color = MaroonPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // Primary Red Button
                 Button(
@@ -250,7 +276,6 @@ fun AuthScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Colored Google 'G' icon drawing
                         Canvas(modifier = Modifier.size(18.dp)) {
                             val w = size.width
                             val h = size.height
@@ -284,6 +309,30 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+
+        // Forgot Password Bottom Sheet
+        if (showForgotPasswordSheet) {
+            ForgotPasswordBottomSheet(
+                onDismiss = { showForgotPasswordSheet = false },
+                onOtpSent = { phone ->
+                    targetMobileForOtp = phone
+                    showForgotPasswordSheet = false
+                    showOtpDialog = true
+                }
+            )
+        }
+
+        // OTP Verification Dialog
+        if (showOtpDialog) {
+            OtpVerificationDialog(
+                mobileNumber = targetMobileForOtp,
+                onDismiss = { showOtpDialog = false },
+                onVerified = {
+                    showOtpDialog = false
+                    onResetPasswordNavigate()
+                }
+            )
+        }
     }
 }
 
@@ -303,7 +352,6 @@ fun AuthTabToggle(
         Row(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Log In Tab
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -323,7 +371,6 @@ fun AuthTabToggle(
                 )
             }
 
-            // Register Tab
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -403,13 +450,5 @@ fun AuthInputField(
 fun AuthScreenLogInPreview() {
     HandyHubTheme {
         AuthScreen(initialMode = AuthMode.LOG_IN)
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun AuthScreenRegisterPreview() {
-    HandyHubTheme {
-        AuthScreen(initialMode = AuthMode.REGISTER)
     }
 }

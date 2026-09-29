@@ -19,22 +19,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.Comment
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,20 +64,17 @@ import com.example.handyhub.ui.theme.TextDark
 import com.example.handyhub.ui.theme.TextSecondary
 
 @Composable
-fun WorkerProfileScreen(
-    workerName: String = "Juan Dela Cruz",
-    primaryTrade: String = "Master Plumber & Electrician",
-    workerPhone: String = "+63 917 888 9999",
+fun WorkerInspectionScreen(
+    workerId: String = "EMP-01",
+    workerName: String = "Roberto \"Bert\" Flores",
+    primaryTrade: String = "Master Electrician",
     avatarUrl: String? = null,
-    onBackClick: () -> Unit = {}
+    initialAccepted: Boolean = false,
+    onBackClick: () -> Unit = {},
+    onChatClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    var showEditDialog by remember { mutableStateOf(false) }
-
-    // Editable state for worker self-profile
-    var currentName by remember { mutableStateOf(workerName) }
-    var currentPhone by remember { mutableStateOf(workerPhone) }
-    var currentTrade by remember { mutableStateOf(primaryTrade) }
+    var isAccepted by remember { mutableStateOf(initialAccepted) }
 
     Box(
         modifier = Modifier
@@ -95,7 +91,7 @@ fun WorkerProfileScreen(
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header Top Bar with Edit Profile IconButton (pencil icon)
+                // Header Top Bar
                 item {
                     Box(
                         modifier = Modifier
@@ -105,35 +101,22 @@ fun WorkerProfileScreen(
                             .padding(top = 44.dp, bottom = 48.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = onBackClick) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back",
-                                        tint = Color.White
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "My Worker Profile",
-                                    color = Color.White,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Black
-                                )
-                            }
-
-                            // Edit Profile Pencil Icon
-                            IconButton(onClick = { showEditDialog = true }) {
+                            IconButton(onClick = onBackClick) {
                                 Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit Profile",
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
                                     tint = Color.White
                                 )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Worker Inspection Profile",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black
+                            )
                         }
                     }
                 }
@@ -170,7 +153,7 @@ fun WorkerProfileScreen(
                                     if (!avatarUrl.isNullOrEmpty()) {
                                         AsyncImage(
                                             model = avatarUrl,
-                                            contentDescription = currentName,
+                                            contentDescription = workerName,
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
                                         )
@@ -188,7 +171,7 @@ fun WorkerProfileScreen(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = currentName,
+                                        text = workerName,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Black,
                                         color = TextDark
@@ -211,7 +194,7 @@ fun WorkerProfileScreen(
                                         .padding(horizontal = 10.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = currentTrade.uppercase(),
+                                        text = primaryTrade.uppercase(),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaroonPrimary
@@ -229,7 +212,7 @@ fun WorkerProfileScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "4.9 · 98% Recommended by CDO Clients",
+                                        text = "4.9 · 96% Recommended by CDO Clients",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = TextSecondary
@@ -240,7 +223,7 @@ fun WorkerProfileScreen(
                     }
                 }
 
-                // Phone Section: ALWAYS real unlocked phone number for worker self-view
+                // Contact Section Logic (Privacy Protected vs Unlocked)
                 item {
                     Column(
                         modifier = Modifier
@@ -251,41 +234,48 @@ fun WorkerProfileScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0xFFE8F5E9))
-                                .border(1.dp, Color(0xFFA5D6A7), RoundedCornerShape(14.dp))
+                                .background(if (isAccepted) Color(0xFFE8F5E9) else Color(0xFFFFF8E1))
+                                .border(
+                                    1.dp,
+                                    if (isAccepted) Color(0xFFA5D6A7) else Color(0xFFFFE082),
+                                    RoundedCornerShape(14.dp)
+                                )
                                 .padding(16.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.LockOpen,
-                                    contentDescription = "Unlocked",
-                                    tint = Color(0xFF2E7D32),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = "MY VERIFIED MOBILE NUMBER (UNLOCKED)",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF2E7D32)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isAccepted) Icons.Default.LockOpen else Icons.Default.Lock,
+                                        contentDescription = "Contact Status",
+                                        tint = if (isAccepted) Color(0xFF2E7D32) else Color(0xFFF57F17),
+                                        modifier = Modifier.size(20.dp)
                                     )
-                                    Text(
-                                        text = currentPhone,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color(0xFF1B5E20)
-                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = if (isAccepted) "🔓 UNLOCKED CONTACT" else "🔒 PRIVACY PROTECTED",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isAccepted) Color(0xFF2E7D32) else Color(0xFFF57F17)
+                                        )
+                                        Text(
+                                            text = if (isAccepted) "+63 917 888 9999" else "+63 917 **** ***",
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = if (isAccepted) Color(0xFF1B5E20) else TextDark
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                // Dynamic Skill Mastery Breakdown
+                // Category Mastery Breakdown
                 item {
                     Column(
                         modifier = Modifier
@@ -302,8 +292,8 @@ fun WorkerProfileScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         val masteryList = listOf(
-                            CategoryMasteryData("PLUMBING", "Plumbing Services", "Master Level 5", 0.95f, 42, 4.9),
-                            CategoryMasteryData("ELECTRICAL", "Electrical Services", "Expert Level 4", 0.85f, 20, 4.8)
+                            CategoryMasteryData("ELECTRICAL", "Electrical Services", "Expert Level 4", 0.90f, 38, 4.9),
+                            CategoryMasteryData("APPLIANCE_SERVICING", "Appliance Servicing", "Proficient", 0.70f, 14, 4.7)
                         )
 
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -323,8 +313,8 @@ fun WorkerProfileScreen(
                     ) {
                         AutoPortfolioGallery(
                             projects = listOf(
-                                PortfolioProject("1", "Kitchen Water Pipe Replacement", "Plumbing", "", "Sept 20, 2026", 5.0),
-                                PortfolioProject("2", "Circuit Breaker Upgrade", "Electrical", "", "Sept 15, 2026", 4.8)
+                                PortfolioProject("1", "Main Circuit Breaker Upgrade", "Electrical", "", "Sept 22, 2026", 5.0),
+                                PortfolioProject("2", "Ceiling Fan & Light Fixture", "Electrical", "", "Sept 18, 2026", 4.9)
                             )
                         )
                     }
@@ -347,8 +337,8 @@ fun WorkerProfileScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         val reviews = listOf(
-                            ClientReview("1", "Maria Santos", 5, "Yesterday", "Very professional and cleaned up the workstation after repairing our kitchen sink. Highly recommended!", listOf("Punctual", "Detail-Oriented", "Clean Worksite")),
-                            ClientReview("2", "Atty. Ricardo Dalisay", 5, "3 days ago", "Fixed our bathroom plumbing rapidly without any hassle.", listOf("Punctual", "Efficient"))
+                            ClientReview("1", "Atty. Ricardo Dalisay", 5, "2 days ago", "Roberto is an exceptional electrician. Diagnosed our panel box issue instantly.", listOf("Punctual", "Detail-Oriented", "Clean Worksite")),
+                            ClientReview("2", "Maria Santos", 5, "Last week", "Very polite and professional service in Carmen.", listOf("Polite", "Fair Pricing"))
                         )
 
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -363,80 +353,90 @@ fun WorkerProfileScreen(
                     Spacer(modifier = Modifier.height(30.dp))
                 }
             }
-        }
 
-        // Edit Profile AlertDialog
-        if (showEditDialog) {
-            var tempName by remember { mutableStateOf(currentName) }
-            var tempPhone by remember { mutableStateOf(currentPhone) }
-            var tempTrade by remember { mutableStateOf(currentTrade) }
-
-            AlertDialog(
-                onDismissRequest = { showEditDialog = false },
-                title = { Text("Edit Worker Profile", fontWeight = FontWeight.Bold, color = MaroonPrimary) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(
-                            value = tempName,
-                            onValueChange = { tempName = it },
-                            label = { Text("Full Name") },
-                            singleLine = true,
-                            colors = textFieldColors()
-                        )
-                        OutlinedTextField(
-                            value = tempPhone,
-                            onValueChange = { tempPhone = it },
-                            label = { Text("Phone Number") },
-                            singleLine = true,
-                            colors = textFieldColors()
-                        )
-                        OutlinedTextField(
-                            value = tempTrade,
-                            onValueChange = { tempTrade = it },
-                            label = { Text("Primary Trade / Specialization") },
-                            singleLine = true,
-                            colors = textFieldColors()
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            currentName = tempName
-                            currentPhone = tempPhone
-                            currentTrade = tempTrade
-                            showEditDialog = false
-                            Toast.makeText(context, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaroonPrimary)
+            // Sticky Bottom Action Bar (Employer POV)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .border(width = 1.dp, color = Color(0xFFE0E0E0))
+                    .padding(16.dp)
+            ) {
+                if (isAccepted) {
+                    // ACCEPTED: Call & Chat
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Save Changes", color = Color.White)
+                        Button(
+                            onClick = { Toast.makeText(context, "Calling $workerName (+63 917 888 9999)...", Toast.LENGTH_SHORT).show() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Phone, contentDescription = "Call", tint = Color.White)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Call", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = { onChatClick(workerId) },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaroonPrimary),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1.5f)
+                                .height(48.dp)
+                        ) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.Comment, contentDescription = "Chat", tint = Color.White)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chat with Worker", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showEditDialog = false }) {
-                        Text("Cancel", color = TextSecondary)
+                } else {
+                    // PENDING / REJECTED: Decline & Accept Application
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                Toast.makeText(context, "Declined application for $workerName", Toast.LENGTH_SHORT).show()
+                                onBackClick()
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        ) {
+                            Text("Decline", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                isAccepted = true
+                                Toast.makeText(context, "Application Accepted! Contact details unlocked.", Toast.LENGTH_LONG).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaroonPrimary),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1.5f)
+                                .height(48.dp)
+                        ) {
+                            Text("Accept Application", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-            )
+            }
         }
     }
 }
 
-@Composable
-private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = Color.White,
-    unfocusedContainerColor = Color.White,
-    focusedBorderColor = MaroonPrimary,
-    unfocusedBorderColor = Color(0xFFCCCCCC),
-    focusedTextColor = TextDark,
-    unfocusedTextColor = TextDark
-)
-
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun WorkerProfileScreenPreview() {
+fun WorkerInspectionScreenPreview() {
     HandyHubTheme {
-        WorkerProfileScreen()
+        WorkerInspectionScreen()
     }
 }
