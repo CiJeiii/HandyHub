@@ -219,10 +219,10 @@ fun AcceptedTaskCard(
                             )
                         }
 
-                        // Stalk Profile TextButton
+                        // View Profile TextButton
                         TextButton(onClick = onStalkProfileClick) {
                             Text(
-                                text = "Stalk Profile →",
+                                text = "View Profile →",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaroonPrimary

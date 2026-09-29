@@ -65,7 +65,7 @@ fun ApplicantReviewCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -277,7 +277,7 @@ fun ApplicantReviewCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Stalk Profile button always present
+                // View Profile button always present
                 OutlinedButton(
                     onClick = onStalkProfileClick,
                     shape = RoundedCornerShape(8.dp),
@@ -286,7 +286,7 @@ fun ApplicantReviewCard(
                         .height(40.dp)
                 ) {
                     Text(
-                        text = "Stalk Profile",
+                        text = "View Profile",
                         color = TextDark,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold

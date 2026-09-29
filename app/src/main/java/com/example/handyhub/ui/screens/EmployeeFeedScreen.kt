@@ -22,7 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -242,6 +242,33 @@ fun EmployeeFeedScreen(
 
                                 HorizontalDivider(color = Color(0xFFEEEEEE))
 
+                                // "My Profile" Action Item
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Person,
+                                                contentDescription = "My Profile",
+                                                tint = MaroonPrimary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Text(
+                                                text = "My Profile",
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextDark
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        showAccountMenu = false
+                                        onProfileClick()
+                                    }
+                                )
+
+                                HorizontalDivider(color = Color(0xFFEEEEEE))
+
                                 // Switch Role Action Item
                                 DropdownMenuItem(
                                     text = {
@@ -275,7 +302,7 @@ fun EmployeeFeedScreen(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                                 contentDescription = "Log Out",
                                                 tint = Color(0xFFD32F2F),
                                                 modifier = Modifier.size(18.dp)
@@ -765,7 +792,7 @@ private suspend fun fetchMockOpenJobs(categoryFilter: String, barangayFilter: St
                 employerId = "EMP-02",
                 title = "Kitchen Sink Pipe & Drain Leak Repair",
                 category = ThesisCategories.PLUMBING,
-                description = "Fix steady water leak under kitchen sink main PVC line.",
+                description = "Steady water leak under kitchen sink main PVC line.",
                 addressDistrict = "Brgy. Nazareth, CDO",
                 preferredDateTime = "Tomorrow, 9:00 AM",
                 budgetPhp = 1200.0,
@@ -780,7 +807,7 @@ private suspend fun fetchMockOpenJobs(categoryFilter: String, barangayFilter: St
                 addressDistrict = "Brgy. Kauswagan, CDO",
                 preferredDateTime = "As Soon As Possible",
                 budgetPhp = 1800.0,
-                status = "OPEN"
+                status = "OREN"
             )
         )
 

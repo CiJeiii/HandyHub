@@ -57,6 +57,7 @@ import com.example.handyhub.ui.components.CategoryMasteryData
 import com.example.handyhub.ui.components.ClientReview
 import com.example.handyhub.ui.components.ClientReviewCard
 import com.example.handyhub.ui.components.PortfolioProject
+import com.example.handyhub.ui.components.TrustAndVerificationCard
 import com.example.handyhub.ui.theme.HandyHubTheme
 import com.example.handyhub.ui.theme.LightPinkButton
 import com.example.handyhub.ui.theme.MaroonPrimary
@@ -282,6 +283,21 @@ fun WorkerProfileScreen(
                                 }
                             }
                         }
+                    }
+                }
+
+                // Trust & Verification Section (Worker Owner POV with Upload button)
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                    ) {
+                        TrustAndVerificationCard(
+                            onUploadCredentialsClick = {
+                                Toast.makeText(context, "Opening credentials upload manager...", Toast.LENGTH_SHORT).show()
+                            }
+                        )
                     }
                 }
 

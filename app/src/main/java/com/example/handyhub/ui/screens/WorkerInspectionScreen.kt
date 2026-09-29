@@ -1,5 +1,6 @@
 package com.example.handyhub.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +58,7 @@ import com.example.handyhub.ui.components.CategoryMasteryData
 import com.example.handyhub.ui.components.ClientReview
 import com.example.handyhub.ui.components.ClientReviewCard
 import com.example.handyhub.ui.components.PortfolioProject
+import com.example.handyhub.ui.components.TrustAndVerificationCard
 import com.example.handyhub.ui.theme.HandyHubTheme
 import com.example.handyhub.ui.theme.LightPinkButton
 import com.example.handyhub.ui.theme.MaroonPrimary
@@ -63,6 +66,9 @@ import com.example.handyhub.ui.theme.OffWhiteBackground
 import com.example.handyhub.ui.theme.TextDark
 import com.example.handyhub.ui.theme.TextSecondary
 
+/**
+ * Employer Candidate Inspection View (Employer POV) for inspecting applicant or active worker credentials.
+ */
 @Composable
 fun WorkerInspectionScreen(
     workerId: String = "EMP-01",
@@ -75,6 +81,10 @@ fun WorkerInspectionScreen(
 ) {
     val context = LocalContext.current
     var isAccepted by remember { mutableStateOf(initialAccepted) }
+
+    LaunchedEffect(workerId) {
+        Log.d("WorkerProfileView", "Viewing worker ID: $workerId (Accepted: $isAccepted)")
+    }
 
     Box(
         modifier = Modifier
@@ -112,7 +122,7 @@ fun WorkerInspectionScreen(
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Worker Inspection Profile",
+                                text = "Candidate Profile",
                                 color = Color.White,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Black
@@ -272,6 +282,19 @@ fun WorkerInspectionScreen(
                                 }
                             }
                         }
+                    }
+                }
+
+                // Trust & Verification Section (Employer Inspection POV without upload button)
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                    ) {
+                        TrustAndVerificationCard(
+                            onUploadCredentialsClick = null
+                        )
                     }
                 }
 

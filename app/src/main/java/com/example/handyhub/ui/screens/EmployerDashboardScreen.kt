@@ -59,8 +59,8 @@ import com.example.handyhub.data.model.JobPostDto
 import com.example.handyhub.data.network.RetrofitClient
 import com.example.handyhub.ui.components.AcceptedTaskCard
 import com.example.handyhub.ui.components.EmployerStatsHeader
-import com.example.handyhub.ui.components.JobCompletionRatingDialog
 import com.example.handyhub.ui.components.LogOutConfirmationDialog
+import com.example.handyhub.ui.components.RateWorkerDialog
 import com.example.handyhub.ui.components.ReportNoShowDialog
 import com.example.handyhub.ui.theme.HandyHubTheme
 import com.example.handyhub.ui.theme.LightPinkButton
@@ -86,8 +86,9 @@ fun EmployerDashboardScreen(
     val activeTasks = remember { mutableStateListOf<JobPostDto>() }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Dialog & menu state
+    // Dialog state for rating completed task with media
     var jobToRate by remember { mutableStateOf<JobPostDto?>(null) }
+    // Dialog state for reporting no-show
     var jobToReportNoShow by remember { mutableStateOf<JobPostDto?>(null) }
     var showAccountMenu by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -188,7 +189,6 @@ fun EmployerDashboardScreen(
                             onDismissRequest = { showAccountMenu = false },
                             modifier = Modifier.background(Color.White)
                         ) {
-                            // Header Item
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -218,7 +218,6 @@ fun EmployerDashboardScreen(
 
                             HorizontalDivider(color = Color(0xFFEEEEEE))
 
-                            // Switch Role Action Item
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -246,7 +245,6 @@ fun EmployerDashboardScreen(
 
                             HorizontalDivider(color = Color(0xFFEEEEEE))
 
-                            // Log Out Action Item
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -446,13 +444,17 @@ fun EmployerDashboardScreen(
             )
         }
 
-        // Job Completion & Rating Dialog
+        // Media-enabled Rate Worker Dialog
         if (jobToRate != null) {
-            JobCompletionRatingDialog(
+            RateWorkerDialog(
                 workerName = "Juan Dela Cruz",
                 onDismiss = { jobToRate = null },
-                onSubmitReview = { rating, tags, _ ->
-                    Toast.makeText(context, "Review submitted ($rating stars, ${tags.size} tags). Job marked COMPLETED!", Toast.LENGTH_LONG).show()
+                onSubmitReview = { rating, _, photos, video ->
+                    Toast.makeText(
+                        context,
+                        "Review (${rating}★) and proof media (${photos.size} photos, ${if (video != null) "1 video" else "no video"}) submitted successfully!",
+                        Toast.LENGTH_LONG
+                    ).show()
                     activeTasks.remove(jobToRate)
                     jobToRate = null
                 }
